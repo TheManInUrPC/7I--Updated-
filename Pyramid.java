@@ -42,6 +42,7 @@ public class Pyramid<T extends Geometry>
     private ArrayList<ArrayList<PyramidNode>> memes;
     private int rows;
     private Point p1;
+    private PyramidNode<T> root;
     
 
     //--------------------- constructor --------------------------
@@ -70,7 +71,12 @@ public class Pyramid<T extends Geometry>
            {
                node = new PyramidNode( ( x % 2 ), ( y + 10 ), nW, nH );
                
-               node.setData( p1 );
+               
+               while( r == 1 )
+               {
+                 root = node;
+               }
+               //node.setData( p1 );
                
                row.add( node );
            }
@@ -85,6 +91,14 @@ public class Pyramid<T extends Geometry>
      */
     public void clear()
     {
+        for( int i = 0; i < memes.size(); i++ )
+        {
+            memes.remove( i );
+        }
+        for( int x = 0; x < row.size(); x++ )
+        {
+            row.remove( x );
+        }
         
     }
     
@@ -119,7 +133,7 @@ public class Pyramid<T extends Geometry>
      */
     public PyramidNode<T> getRoot()  // get root node
     { 
-        return null;
+        return root;
     }
     //-------------------------- isEmpty() ----------------------------
     /**
@@ -130,7 +144,14 @@ public class Pyramid<T extends Geometry>
      */
     public boolean isEmpty()
     {
+        if( root == null )
+        {
         return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     //--------------------------- main --------------------------------
     /**
