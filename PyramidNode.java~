@@ -135,25 +135,4 @@ class PyramidNode<T extends Geometry >  implements Geometry
     {
         return _width;
     }
-    
-    public void makeRight( PyramidNode<T> n )
-    {
-        _right = n;
-    }
-    
-    
-    public void makeLeft( PyramidNode<T> n )
-    {
-        _left = n;
-    }
-    
-    public PyramidNode<T> getLeft()
-    {
-        return _left;
-    }
-    
-      public PyramidNode<T> getRight()
-    {
-        return _right;
-    }
 }

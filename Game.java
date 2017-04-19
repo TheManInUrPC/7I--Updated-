@@ -21,7 +21,7 @@ public class Game extends JPanel
     static         Game  theGame;
     static         int   numRows = 4;
     //----------------------- instance variables ------------------------
-
+    
     private CardStack             _drawPile = null;
     private CardStack             _discards = null;
     private ArrayList<Card>       _baseDeck = null;
@@ -29,13 +29,13 @@ public class Game extends JPanel
     private Pyramid<Card>         _pyramid;
     private Random                _rng;
     private ArrayList<Card>       _pyramidCards;
-
+    
     //----- positioning variables
-
+    
     private   int discardX  = 60,  discardY  = 140;
     private   int drawPileX = 60,  drawPileY = 40;
     private   int pyramidX  = 400,   pyramidY  = 40;
-
+    
     //---------------------- constructor -----------------------------
     /**
      * Game is where most of the game-based code is found.
@@ -46,15 +46,15 @@ public class Game extends JPanel
     {
         this.setLayout( null );
         theGame = this;
-
+        
         _parentWidth = pWidth;
         _baseDeck = new ArrayList<Card>();
         _pyramidCards = new ArrayList<Card>();
-
+        
         createDeck();
         _discards = new CardStack( this, discardX, discardY );
         _discards.setYOffset( 2 );
-
+        
         _drawPile = new CardStack( this, drawPileX, drawPileY );
         _drawPile.setXOffset( 0 );
         _rng = new Random( seed );
@@ -84,7 +84,7 @@ public class Game extends JPanel
         }
         else
             msg = "No more cards to draw." ;
-
+        
         update();
         return msg;
     }
@@ -97,7 +97,7 @@ public class Game extends JPanel
         Collections.shuffle( _baseDeck, _rng );
         replay();
     }
-
+    
     //---------------------- replay( ) -----------------------------
     /**
      * Replay the game.
@@ -105,10 +105,10 @@ public class Game extends JPanel
     public void replay()
     {
         _discards.clear();
-
+        
         deckToDrawPile( _baseDeck );
         dealCards( _drawPile );
-
+        
         update();
     }
     //---------------------- draw( ) -----------------------------
@@ -129,9 +129,9 @@ public class Game extends JPanel
         // 7I: Do the "inverse" of the last play
         /////////////////////////////////////////////////////////////
         System.out.println( "Undo not implemented." );
-
-
-
+        
+        
+        
         reDrawPyramid();
         update();
     }
@@ -142,20 +142,20 @@ public class Game extends JPanel
     public void autoPlay()
     {
         deckToDrawPile( _baseDeck );
-
+        
         _discards.clear();
         _pyramid = new Pyramid<Card>( numRows, pyramidX, pyramidY,
-                                  Card.width, Card.height );
+                                     Card.width, Card.height );
         dealCards( _drawPile );
         //////////////////////////////////////////////////////////////
         // This will be part of 7P
         //////////////////////////////////////////////////////////////
-
+        
         System.out.println( "Auto play not implemented." );
-
-
-
-
+        
+        
+        
+        
         update();
     }
     //------------------------ play( Card ) --------------------------
@@ -167,9 +167,12 @@ public class Game extends JPanel
      */
     public boolean play( Card picked )
     {
-       
+        
         boolean playedFromPyramid = false;
-
+        
+        
+        
+        
         if ( picked == _drawPile.top() )
             drawCard();
         else if ( playPyramidCard( picked ) )
@@ -178,27 +181,23 @@ public class Game extends JPanel
             ///////////////////////////////////////////////////////////
             // 7I: Need to check here to see if game has ended
             ///////////////////////////////////////////////////////////
-            //If Player loses
-            if( _drawPile.top() == null )
-            {
-                System.out.println( "You Lose");
-            }
-
-                    
-                
-              
-         
-                
-                
-
-
-
-
-
+            
+            
+        }
+        
+        if( _pyramid.getRoot() == null )
+        {
+            System.out.println( "You Win!");
+            
+        }
+        else if( _drawPile.top() == null )
+        {
+            
+            System.out.println( "You Lose, like the Colorado Avalanche.." );
         }
         return playedFromPyramid;
-
-
+        
+        
     }
     //------------------------ playPyramidCard ------------------------
     /**
@@ -210,17 +209,38 @@ public class Game extends JPanel
     private boolean playPyramidCard( Card picked )
     {
         boolean success = false;
-
+        
         PyramidNode cardNode = picked.getNode();
         {
+          
+            if( cardNode == null )
+            {
+                return false;
+            }
+            else if( cardNode.getLeft() != null && cardNode.getRight() != null )
+            {
+                return false;
+            }
+          
             Card.Rank pickedRank = picked.getRank();
             Card top = _discards.top();
-            int diff = Math.abs( pickedRank.ordinal()
-                                 - top.getRank().ordinal() );
+            
+            int diff = 0;
+            
+            if( top != null )
+            {
+               diff = Math.abs( pickedRank.ordinal()
+                                    - top.getRank().ordinal() );
+            }
+            
 
+           
+
+            
             if ( diff == 1 || diff == 12 )
             {
                 _discards.push( picked );
+                _pyramid.delete( picked );
                 update();
                 success = true;
             }
@@ -237,16 +257,16 @@ public class Game extends JPanel
         // You might need to do something here. I didn't, but there
         //    or valid implementations that might require it.
         /////////////////////////////////////////////////////////////
-
+        
         // show all cards on the _discards stack
         _discards.showCards( -1 );
-
+        
         // show no cards on the draw pile
         _drawPile.showCards( 0 );
         this.repaint();
     }
-
-
+    
+    
     //-------------------- dealCards() ----------------------------
     /**
      * Deal the cards from the drawPile to the pyramid.
@@ -266,13 +286,13 @@ public class Game extends JPanel
         for ( int level = 0; level < numRows; level++ )
         {
             int span = Card.width * ( level + 1 ) + xGap * level;
-
+            
             int xPos = pyramidX - span / 2;
             int yPos = pyramidY + level * yDelta;
             for ( int n = 0; n < level + 1; n++ )
             {
                 PyramidNode<Card> node = new PyramidNode<Card>( xPos, yPos,
-                                             Card.width, Card.height );
+                                                               Card.width, Card.height );
                 Card card = deck.pop();
                 _pyramidCards.add( card );
                 card.setNode( node );
@@ -301,9 +321,9 @@ public class Game extends JPanel
             card.setFaceUp( true );
             this.setComponentZOrder( card, 0 );
         }
-
+        
     }
-
+    
     //////////////////////////////////////////////////////////////////
     // You probably don't need to edit anything below here,
     //    but you may if you wish.
@@ -359,7 +379,7 @@ public class Game extends JPanel
         _drawPile.showCards( 0 );
         this.repaint();
     }
-
+    
     //------------------------ createDeck() ---------------------------
     /**
      * Create a deck of cards in the _base variable.
@@ -367,7 +387,7 @@ public class Game extends JPanel
     private void createDeck()
     {
         int  cardIndex = 0;
-
+        
         for ( Card.Suit suit: Card.Suit.values() )
         {
             for ( Card.Rank rank: Card.Rank.values() )
@@ -378,7 +398,7 @@ public class Game extends JPanel
             }
         }
     }
-
+    
     //------------------------ deckToDrawPile( Card[] ) ---------------
     /**
      * Copy an array of cards into CardStack representing draw pile.

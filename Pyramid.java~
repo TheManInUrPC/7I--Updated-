@@ -37,6 +37,13 @@ public class Pyramid<T extends Geometry>
     //-------------------- instance variables --------------------
     private int  _xCenter;    // x is CENTER of top card of pyramid
     private int  _yCenter;    // y center of top card
+    private PyramidNode node;
+    private ArrayList<PyramidNode> row;
+    private ArrayList<ArrayList<PyramidNode>> memes;
+    private int rows;
+    private Point p1;
+    private PyramidNode<T> root;
+    
 
     //--------------------- constructor --------------------------
     /**
@@ -50,7 +57,32 @@ public class Pyramid<T extends Geometry>
      */
     public Pyramid( int nRows, int x, int y, int nW , int nH )
     {
+        _xCenter = x;
+        _yCenter = y;
         
+        rows = nRows;
+        
+        p1.x = x;
+        p1.y = y;
+        
+       for( int i = 0; i < rows; i++ )
+       {
+           for( int r = 0; r < i; r++ )
+           {
+               node = new PyramidNode( ( x % 2 ), ( y + 10 ), nW, nH );
+               
+               
+               while( r == 1 )
+               {
+                 root = node;
+               }
+               //node.setData( p1 );
+               
+               row.add( node );
+           }
+           
+           memes.add( row );
+       }
     }
 
     //----------------- clear( ) -------------------
@@ -59,6 +91,15 @@ public class Pyramid<T extends Geometry>
      */
     public void clear()
     {
+        for( int i = 0; i < memes.size(); i++ )
+        {
+            memes.remove( i );
+        }
+        for( int x = 0; x < row.size(); x++ )
+        {
+            row.remove( x );
+        }
+        
     }
     
     //------------------- getNode( int, int  ) -----------------------
@@ -92,7 +133,7 @@ public class Pyramid<T extends Geometry>
      */
     public PyramidNode<T> getRoot()  // get root node
     { 
-        return null;
+        return root;
     }
     //-------------------------- isEmpty() ----------------------------
     /**
@@ -103,7 +144,14 @@ public class Pyramid<T extends Geometry>
      */
     public boolean isEmpty()
     {
+        if( root == null )
+        {
         return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     //--------------------------- main --------------------------------
     /**

@@ -37,14 +37,14 @@ public class Pyramid<T extends Geometry>
     //-------------------- instance variables --------------------
     private int  _xCenter;    // x is CENTER of top card of pyramid
     private int  _yCenter;    // y center of top card
-    private PyramidNode node;
-    private ArrayList<PyramidNode> row;
-    private ArrayList<ArrayList<PyramidNode>> memes;
+    private PyramidNode<T> node;
+    private ArrayList<PyramidNode<T>> row;
+    private ArrayList<ArrayList<PyramidNode<T>>> pepepyramid;
     private int rows;
     private Point p1;
     private PyramidNode<T> root;
     
-
+    
     //--------------------- constructor --------------------------
     /**
      * Constructor.
@@ -65,35 +65,29 @@ public class Pyramid<T extends Geometry>
         p1.x = x;
         p1.y = y;
         
-       for( int i = 0; i < rows; i++ )
-       {
-           for( int r = 0; r < i; r++ )
-           {
-               node = new PyramidNode( ( x % 2 ), ( y + 10 ), nW, nH );
-               
-               
-               while( r == 1 )
-               {
-                 root = node;
-               }
-               //node.setData( p1 );
-               
-               row.add( node );
-           }
-           
-           memes.add( row );
-       }
+        for( int i = 0; i < rows; i++ )
+        {
+            for( int r = 0; r < i; r++ )
+            {
+                node = new PyramidNode<T>( ( x % 2 ), ( y + 10 ), nW, nH );
+                
+                
+                row.add( node );
+            }
+            
+            pepepyramid.add( row );
+        }
     }
-
+    
     //----------------- clear( ) -------------------
     /**
      * Empty all nodes of content.
      */
     public void clear()
     {
-        for( int i = 0; i < memes.size(); i++ )
+        for( int i = 0; i < pepepyramid.size(); i++ )
         {
-            memes.remove( i );
+            pepepyramid.remove( i );
         }
         for( int x = 0; x < row.size(); x++ )
         {
@@ -123,7 +117,7 @@ public class Pyramid<T extends Geometry>
      */
     public PyramidNode<T> getNode( int l, int p )  // get l,n node
     { 
-        return null;
+        return pepepyramid.get( l ).get( p );
     }
     //------------------- getRoot() -----------------------
     /**
@@ -133,7 +127,7 @@ public class Pyramid<T extends Geometry>
      */
     public PyramidNode<T> getRoot()  // get root node
     { 
-        return root;
+        return pepepyramid.get( 0 ).get( 0 );
     }
     //-------------------------- isEmpty() ----------------------------
     /**
@@ -144,14 +138,92 @@ public class Pyramid<T extends Geometry>
      */
     public boolean isEmpty()
     {
-        if( root == null )
+        if( getRoot() == null )
         {
-        return true;
+            return true;
         }
         else
         {
             return false;
         }
+    }
+    /**
+     * 
+     * Add card to pyramid.
+     * 
+     * 
+     * 
+     */
+    public void add()
+    {
+        for( int i = 0; i < rows; i++ )
+        {
+            for( int x = 0; x < pepepyramid.get( i ).size(); x++ )
+            {
+                
+                PyramidNode<T> node2 = pepepyramid.get( i ).get( x );
+                
+                PyramidNode<T> child1 = null; //pepepyramid.get( i + 1 ).get( x );
+                
+                PyramidNode<T> child2 = null; //pepepyramid.get( i + 1 ).get( x + 1 );
+                    
+                //try
+                //{
+                    child1 = pepepyramid.get( i + 1 ).get( x );
+                    
+                    child2 = pepepyramid.get( i + 1 ).get( x + 1 );
+                //}
+                //catch( IndexOutOfBoundsException e )
+                //{
+                    child1 = null;
+                    
+                    child2 = null;
+                //}
+                
+                
+                //Set one to left, and the other to right.
+                
+                node2.makeLeft( child1 );
+                
+                node2.makeRight( child2 );
+            }
+            
+        }
+    }
+    /**
+     * Delete card method.
+     * 
+     * Removes the card from the pyramid.
+     * 
+     */
+    public void delete( Card n )
+    {
+        
+        for( int i = 0; i < rows; i++ )
+        {
+            for( int x = 0; x < pepepyramid.get( i ).size(); x++ )
+            {
+                
+                Card pyramidC = (Card)pepepyramid.get( i ).get( x ).getData();
+                
+                if( pyramidC.getSuit() == n.getSuit() )
+                {
+                    if( pyramidC.getRank() == n.getRank() )
+                    {
+                        pepepyramid.get( i ).remove( x );
+                        
+                        x =  ( pepepyramid.get( i ).size() - 1 );
+                        
+                        i = ( rows - 1 );
+                        
+                        add();
+                    }
+                }
+            }
+        }
+        
+        
+        
     }
     //--------------------------- main --------------------------------
     /**

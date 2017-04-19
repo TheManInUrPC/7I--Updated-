@@ -1,0 +1,819 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}}
+{\*\generator Riched20 10.0.14393}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\f0\fs22\lang9 //+++++++++++++++++++++++++ Game.java +++++++++++++++++++++++++++++\par
+import java.awt.*;\par
+import javax.swing.*;\par
+import javax.swing.border.*;\par
+import java.util.*;\par
+import java.awt.event.*;\par
+import javax.swing.event.*;\par
+/**\par
+ * Game.java - implementation of a solitaire card game.\par
+ *\par
+ * @author David Bitman rdb\par
+ * March 2009\par
+ * mlb 10/09: new cards , new shuffle, new baseDeck\par
+ * rdb 03/14: Changes to reflect Pyramid solitaire and Pyramid class.\par
+ */\par
+\par
+public class Game extends JPanel\par
+\{\par
+    //----------------------- class variables ---------------------------\par
+    private static int   seed = 0;\par
+    static         Game  theGame;\par
+    static         int   numRows = 4;\par
+    //----------------------- instance variables ------------------------\par
+    \par
+    private CardStack             _drawPile = null;\par
+    private CardStack             _discards = null;\par
+    private ArrayList<Card>       _baseDeck = null;\par
+    private int                   _parentWidth;\par
+    private Pyramid<Card>         _pyramid;\par
+    private Random                _rng;\par
+    private ArrayList<Card>       _pyramidCards;\par
+    \par
+    //----- positioning variables\par
+    \par
+    private   int discardX  = 60,  discardY  = 140;\par
+    private   int drawPileX = 60,  drawPileY = 40;\par
+    private   int pyramidX  = 400,   pyramidY  = 40;\par
+    \par
+    //---------------------- constructor -----------------------------\par
+    /**\par
+     * Game is where most of the game-based code is found.\par
+     *\par
+     * @param pWidth int     width of the panel (apprx)\par
+     */\par
+    public Game( int pWidth )\par
+    \{\par
+        this.setLayout( null );\par
+        theGame = this;\par
+        \par
+        _parentWidth = pWidth;\par
+        _baseDeck = new ArrayList<Card>();\par
+        _pyramidCards = new ArrayList<Card>();\par
+        \par
+        createDeck();\par
+        _discards = new CardStack( this, discardX, discardY );\par
+        _discards.setYOffset( 2 );\par
+        \par
+        _drawPile = new CardStack( this, drawPileX, drawPileY );\par
+        _drawPile.setXOffset( 0 );\par
+        _rng = new Random( seed );\par
+        makeNewDeck();\par
+    \}\par
+    //------------------------- drawCard() ----------------------------\par
+    /**\par
+     * Draw a card from the display pile.\par
+     *\par
+     * @return String\par
+     */\par
+    public String drawCard()\par
+    \{\par
+        String msg = null;\par
+        ////////////////////////////////////////////////////////////////\par
+        //\par
+        // To draw a card, you need to pop it from the _drawPile\par
+        //   and push it onto the _discards pile.\par
+        // Of course, check if it is empty.\par
+        // If the draw pile stack is empty, this method should return\par
+        //   a non-null message -- indicating the game is over.\par
+        ///////////////////////////////////////////////////////////////\par
+        if ( _drawPile.size() != 0 )\par
+        \{\par
+            Card next = _drawPile.pop();\par
+            _discards.push( next );\par
+        \}\par
+        else\par
+            msg = "No more cards to draw." ;\par
+        \par
+        update();\par
+        return msg;\par
+    \}\par
+    //------------------------ makeNewDeck() --------------------------\par
+    /**\par
+     * Create new deck.\par
+     */\par
+    public void makeNewDeck()\par
+    \{\par
+        Collections.shuffle( _baseDeck, _rng );\par
+        replay();\par
+    \}\par
+    \par
+    //---------------------- replay( ) -----------------------------\par
+    /**\par
+     * Replay the game.\par
+     */\par
+    public void replay()\par
+    \{\par
+        _discards.clear();\par
+        \par
+        deckToDrawPile( _baseDeck );\par
+        dealCards( _drawPile );\par
+        \par
+        update();\par
+    \}\par
+    //---------------------- draw( ) -----------------------------\par
+    /**\par
+     * Draw from draw pile. Simulate click on draw pile.\par
+     */\par
+    public void draw()\par
+    \{\par
+        play( _drawPile.top() );\par
+    \}\par
+    //---------------------- undoPlay( ) -----------------------------\par
+    /**\par
+     * Undo the previous play.\par
+     */\par
+    public void undoPlay()\par
+    \{\par
+        /////////////////////////////////////////////////////////////\par
+        // 7I: Do the "inverse" of the last play\par
+        /////////////////////////////////////////////////////////////\par
+        System.out.println( "Undo not implemented." );\par
+        \par
+        \par
+        \par
+        reDrawPyramid();\par
+        update();\par
+    \}\par
+    //---------------------- autoPlay( ) ----------------------------\par
+    /**\par
+     * Go into auto play mode.\par
+     */\par
+    public void autoPlay()\par
+    \{\par
+        deckToDrawPile( _baseDeck );\par
+        \par
+        _discards.clear();\par
+        _pyramid = new Pyramid<Card>( numRows, pyramidX, pyramidY,\par
+                                     Card.width, Card.height );\par
+        dealCards( _drawPile );\par
+        //////////////////////////////////////////////////////////////\par
+        // This will be part of 7P\par
+        //////////////////////////////////////////////////////////////\par
+        \par
+        System.out.println( "Auto play not implemented." );\par
+        \par
+        \par
+        \par
+        \par
+        update();\par
+    \}\par
+    //------------------------ play( Card ) --------------------------\par
+    /**\par
+     * Play a card.\par
+     *\par
+     * @param picked Card     a card that is to be played.\par
+     * @return boolean        true means a valid play occurred.\par
+     */\par
+    public boolean play( Card picked )\par
+    \{\par
+        boolean playedFromPyramid = false;\par
+        \par
+        if ( picked == _drawPile.top() )\par
+            drawCard();\par
+        else if ( playPyramidCard( picked ) )\par
+        \{\par
+            playedFromPyramid = true;\par
+            ///////////////////////////////////////////////////////////\par
+            // 7I: Need to check here to see if game has ended\par
+            ///////////////////////////////////////////////////////////\par
+            if( drawCard() == null )\par
+            \{\par
+                \par
+                System.out.println( "Game Over" );\par
+            \}\par
+            \par
+            \par
+        \}\par
+        return playedFromPyramid;\par
+    \}\par
+    //------------------------ playPyramidCard ------------------------\par
+    /**\par
+     * Play a card from the pyramid.\par
+     *\par
+     * @param picked Card\par
+     * @return boolean\par
+     */\par
+    private boolean playPyramidCard( Card picked )\par
+    \{\par
+        boolean success = false;\par
+        \par
+        PyramidNode< Card > cardNode = picked.getNode();\par
+        \{\par
+            if ( cardNode == null )\par
+          return false;\par
+            \par
+         if ( cardNode.chooseWest() != null && cardNode.chooseEast() != null )\par
+          return false;\par
+            \par
+            \par
+            Card.Rank pickedRank = picked.getRank();\par
+            Card top = _discards.top();\par
+            \par
+            \par
+            int diff = 0;\par
+            if ( top != null )\par
+             diff = Math.abs( pickedRank.ordinal() - top.getRank().ordinal() );\par
+            \par
+            if ( diff == 1 || diff == 12 )\par
+            \{\par
+                _discards.push( picked );\par
+                _pyramid.deleteMust( picked );\par
+                update();\par
+                success = true;\par
+            \}\par
+        \}\par
+        return success;\par
+    \}\par
+    //----------------------------- update() ----------------------\par
+    /**\par
+     * Update the display components as needed.\par
+     */\par
+    public void update()\par
+    \{\par
+        /////////////////////////////////////////////////////////////\par
+        // You might need to do something here. I didn't, but there\par
+        //    or valid implementations that might require it.\par
+        /////////////////////////////////////////////////////////////\par
+        \par
+        // show all cards on the _discards stack\par
+        _discards.showCards( -1 );\par
+        \par
+        // show no cards on the draw pile\par
+        _drawPile.showCards( 0 );\par
+        this.repaint();\par
+    \}\par
+    \par
+    \par
+    //-------------------- dealCards() ----------------------------\par
+    /**\par
+     * Deal the cards from the drawPile to the pyramid.\par
+     *    This version just stores all the dealt cards in an ArrayList.\par
+     * @param deck CardStack    deck to deal from\par
+     */\par
+    public void dealCards( CardStack deck )\par
+    \{\par
+        /////////////////////////////////////////////////////////////\par
+        // This approach creates PyramidNodes for each Card in the\par
+        //    pyramid, but does not put the nodes into a tree.\par
+        // You'll have to figure out where/how to do that and what\par
+        //    changes you'll have to make here.\par
+        /////////////////////////////////////////////////////////////\par
+        int xGap = 2;\par
+        int yDelta = 30;\par
+        for ( int level = 0; level < numRows; level++ )\par
+        \{\par
+            int span = Card.width * ( level + 1 ) + xGap * level;\par
+            \par
+            int xPos = pyramidX - span / 2;\par
+            int yPos = pyramidY + level * yDelta;\par
+            for ( int n = 0; n < level + 1; n++ )\par
+            \{\par
+                PyramidNode<Card> node = new PyramidNode<Card>( xPos, yPos,\par
+                                                               Card.width, Card.height );\par
+                Card card = deck.pop();\par
+                _pyramidCards.add( card );\par
+                card.setNode( node );\par
+                node.setData( card );\par
+                card.setFaceUp( true );\par
+                card.setLocation( xPos, yPos );\par
+                this.setComponentZOrder( card, 0 );\par
+                xPos += Card.width + xGap;\par
+            \}\par
+        \}\par
+        reDrawPyramid();\par
+    \}\par
+    //-------------------- reDrawPyramid ----------------------------\par
+    /**\par
+     * Draw the pyramid tree cards.\par
+     */\par
+    public void reDrawPyramid()\par
+    \{\par
+        //////////////////////////////////////////////////////////////\par
+        //  In its present form it just redisplays every card that was\par
+        //     once in the pyramid, whereever they happen to be.\par
+        //  It may or may not be good enough for your implementation.\par
+        //////////////////////////////////////////////////////////////\par
+        for ( Card card: _pyramidCards )\par
+        \{\par
+            card.setFaceUp( true );\par
+            this.setComponentZOrder( card, 0 );\par
+        \}\par
+        \par
+    \}\par
+    \par
+    //////////////////////////////////////////////////////////////////\par
+    // You probably don't need to edit anything below here,\par
+    //    but you may if you wish.\par
+    //////////////////////////////////////////////////////////////////\par
+    //------------------------ newSeed( ) -----------------------------\par
+    /**\par
+     * Set new random number generator seed.\par
+     *\par
+     * @param newSeed int\par
+     */\par
+    public void newSeed( int newSeed )\par
+    \{\par
+        _rng = new Random( newSeed );\par
+        seed = newSeed;\par
+    \}\par
+    //------------------------ setRows( ) -----------------------------\par
+    /**\par
+     * Change the number of rows in the game.\par
+     *     Won't have effect until next game is played.\par
+     * @param rows int\par
+     */\par
+    public void setRows( int rows )\par
+    \{\par
+        numRows = rows;\par
+    \}\par
+    //------------------- theGame() --------------------------------\par
+    /**\par
+     * Singleton pattern requires this method to return a reference\par
+     *    to only allowed instance.\par
+     * @return Game\par
+     */\par
+    public static Game theGame()\par
+    \{\par
+        return theGame;\par
+    \}\par
+    //------------------ showDeck() ----------------------------------\par
+    /**\par
+     * Turn all cards in deck face up and spread them out.\par
+     */\par
+    public void showDeck()\par
+    \{\par
+        _drawPile.setXOffset( 11 );\par
+        _drawPile.showCards( -1 );\par
+        this.repaint();\par
+    \}\par
+    //------------------ hideDeck() ----------------------------------\par
+    /**\par
+     * Turn all cards in deck face down and stack them up again.\par
+     */\par
+    public void hideDeck()\par
+    \{\par
+        _drawPile.setXOffset( 0 );\par
+        _drawPile.showCards( 0 );\par
+        this.repaint();\par
+    \}\par
+    \par
+    //------------------------ createDeck() ---------------------------\par
+    /**\par
+     * Create a deck of cards in the _base variable.\par
+     */\par
+    private void createDeck()\par
+    \{\par
+        int  cardIndex = 0;\par
+        \par
+        for ( Card.Suit suit: Card.Suit.values() )\par
+        \{\par
+            for ( Card.Rank rank: Card.Rank.values() )\par
+            \{\par
+                Card card = new Card( rank, suit );\par
+                _baseDeck.add( 0, card );\par
+                this.add( card );\par
+            \}\par
+        \}\par
+    \}\par
+    \par
+    //------------------------ deckToDrawPile( Card[] ) ---------------\par
+    /**\par
+     * Copy an array of cards into CardStack representing draw pile.\par
+     *\par
+     * @param deck ArrayList<Card>\par
+     */\par
+    private void deckToDrawPile( ArrayList<Card> deck )\par
+    \{\par
+        _drawPile.clear();\par
+        for ( int c = 0; c < 52; c++ )\par
+            _drawPile.push( deck.get( c ) );\par
+    \}\par
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+    //--------------------------- main ---------------------------------\par
+    /**\par
+     * A convenient tool for invoking main class.\par
+     * @param args String[]    Command line arguments\par
+     */\par
+    public static void main( String[] args )\par
+    \{\par
+        // Invoke main class's main\par
+        PyramidSolitaire.main( args );\par
+    \}\par
+\}\par
+\par
+\par
+\par
+-----------------------------------------------\par
+\par
+//+++++++++++++++++++++++++ Pyramid.java ++++++++++++++++++++++++++++\par
+import javax.swing.JPanel;\par
+import java.awt.*;\par
+import java.util.*;\par
+\par
+/**\par
+ * Pyramid - Represent a directed acyclic graph that defines a \par
+ *              pyramid organization suitable for the PyramidSolitaire\par
+ *              game. The goal of this class is to focus it on the \par
+ *              data structure and expect all real game and graphics\par
+ *              functionality to be done elsewhere. The nodes of the\par
+ *              Pyramid, however, do have size and location information\par
+ *              and the Pyramid has a top card location.\par
+ * \par
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+ * This is a very skeleton implementation. You do NOT need to use any\par
+ * or all of the features implied by this skeleton. These are just\par
+ * suggestions that might be useful. \par
+ * \par
+ * AND more methods are certainly needed.\par
+ * \par
+ * The only requirements are:\par
+ *    1. You should use the PyramidNode class to represent each node in\par
+ *       the "tree".\par
+ *    2. Each PyramidNode object needs to have references to its left\par
+ *       and right children nodes (if it has them).\par
+ *    3. Your test for whether you can  move a card should be based on\par
+ *       the information in Pyramid and/or PyramidNode.\par
+ * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+ * @author David Bitman rdb\par
+ * March 2014\par
+ * \par
+ * @param <T>    Pyramid nodes have a data field of type T\par
+ */\par
+public class Pyramid<T extends Geometry> \par
+\{\par
+    //-------------------- instance variables --------------------\par
+    private int  _xCenter;    // x is CENTER of top card of pyramid\par
+    private int  _yCenter;    // y center of top card\par
+    private int lines;\par
+    \par
+    private PyramidNode node;\par
+    private ArrayList<PyramidNode> noder;\par
+    private ArrayList<ArrayList<PyramidNode>> pyramid;\par
+    private int rows;\par
+    private Point pointer;\par
+    //--------------------- constructor --------------------------\par
+    /**\par
+     * Constructor.\par
+     * \par
+     * @param nRows int        number rows in the pyramid\par
+     * @param x int            x location of center of the pyramid\par
+     * @param y int            y location of center of top card\par
+     * @param nW int           width of nodes of pyramid\par
+     * @param nH int           height of nodes of pyramid\par
+     */\par
+    public Pyramid( int nRows, int x, int y, int nW , int nH )\par
+    \{\par
+        _xCenter = x;\par
+        _yCenter = y;\par
+        \par
+        lines = nRows;\par
+        pointer.x = x;\par
+        pointer.y = y;\par
+        \par
+        for( int t = 0; t < nRows; t++ )\par
+        \{\par
+            for( int p = 0; p < t; p++ )\par
+            \{\par
+                node = new PyramidNode( ( x % 2 ), ( y + 10 ), nW, nH );\par
+                noder.add( node );\par
+            \}\par
+            \par
+            pyramid.add( noder );  \par
+        \}\par
+    \}\par
+    \par
+    //----------------- clear( ) -------------------\par
+    /**\par
+     * Empty all nodes of content.\par
+     */\par
+    public void clear()\par
+    \{\par
+        for ( int x = 0; x < noder.size(); x++ )\par
+        \{\par
+            noder.remove( x );\par
+        \}\par
+        for ( int x = 0; x < pyramid.size(); x++ )\par
+        \{\par
+            pyramid.remove( x );\par
+        \}\par
+    \}\par
+    \par
+    //------------------- getNode( int, int  ) -----------------------\par
+    /**\par
+     * Get the PyramidNode at level l, position p. \par
+     * \par
+     * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+     * This is a particularly questionable method. It's not clear that\par
+     * this specific level of information is really necessary. I used\par
+     * it in my first solution, but as I transitioned that solution into\par
+     * starter code + solution, I realized that it should be pretty \par
+     * straightforward to come up with a solution that doesn't need it.\par
+     * \par
+     * Feel free to use it or not.\par
+     * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+     * \par
+     * @param l int     level of pyramid\par
+     * @param p int     position in row ( 0 .. l-1 )\par
+     * @throws IndexOutOfBoundsException\par
+     * @return PyramidNode<T>\par
+     */\par
+    public PyramidNode<T> getNode( int l, int p )  // get l,n node\par
+    \{ \par
+        return pyramid.get( l ).get( p );\par
+    \}\par
+    //------------------- getRoot() -----------------------\par
+    /**\par
+     * Get the root PyramidNode. \par
+     * \par
+     * @return PyramidNode\par
+     */\par
+    public PyramidNode<T> getRoot()  // get root node\par
+    \{ \par
+        return pyramid.get( 0 ).get( 0 );\par
+    \}\par
+    //-------------------------- isEmpty() ----------------------------\par
+    /**\par
+     * One way of making this test is to assume that the entire pyramid\par
+     *    is "empty" if the top element does not contain valid data.\par
+     * \par
+     * @return boolean    true if no valid data is in the pyramid.\par
+     */\par
+    public boolean isEmpty()\par
+    \{\par
+        return pyramid.isEmpty();\par
+    \}\par
+    /**The deletion.\par
+     * @param car Card\par
+     * \par
+     */\par
+    public void deleteMust( Card car )\par
+    \{\par
+        \par
+      for ( int n = 0; n < rows; n++ )\par
+     \{\par
+          \par
+      for ( int a = 0; a < pyramid.get( n ).size(); a++ )\par
+      \{\par
+          \par
+       Card thePyramid = ( Card ) pyramid.get( n ).get( a ).getData();\par
+       if ( thePyramid.getSuit() == car.getSuit() )\par
+       \{\par
+           \par
+        if ( thePyramid.getRank() == car.getRank() )\par
+        \{\par
+            \par
+         pyramid.get( n ).remove( a );\par
+         a = pyramid.get( n ).size() - 1;\par
+         n = rows - 1;\par
+\par
+            placeCards();\par
+        \}\par
+       \}\par
+      \}\par
+     \}  \par
+    \}/**\par
+     * Return the height of the object's bounding box.\par
+     * \par
+     */\par
+    public void placeCards()\par
+    \{\par
+        \par
+     for ( int n = 0; n < rows; n++ )\par
+     \{\par
+         \par
+      for ( int p = 0; p < pyramid.get( n ).size(); p++ )\par
+      \{\par
+          \par
+       PyramidNode<T> attackTitan = pyramid.get( n ).get( p );\par
+       \par
+       PyramidNode<T> firster = null;\par
+       \par
+       PyramidNode<T> seco = null;\par
+       try\par
+           \par
+       \{\par
+           \par
+        firster = pyramid.get( n + 1 ).get( p );\par
+       \}\par
+       \par
+       catch ( IndexOutOfBoundsException tentacle )\par
+       \{\par
+           \par
+        firster = null;\par
+       \}\par
+       \par
+       try\par
+       \{\par
+           \par
+        seco = pyramid.get( n + 1 ).get( p + 1 );\par
+       \}\par
+       \par
+       catch ( IndexOutOfBoundsException tentacle )\par
+       \{\par
+           \par
+        seco = null;\par
+       \}\par
+       \par
+       attackTitan.takeWest( firster );\par
+       attackTitan.takeEast( seco );\par
+      \}\par
+      \par
+     \}\par
+    \}\par
+    //--------------------------- main --------------------------------\par
+    /**\par
+     * This main is a convenience call to the application.\par
+     * \par
+     * @param args String[]            command line arguments.\par
+     */\par
+    public static void main( String[] args )\par
+    \{\par
+        // Invoke main class's main\par
+        PyramidSolitaire.main( args );\par
+    \}\par
+\}\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+-----------------\par
+//++++++++++++++++++++++++++++++++ PyramidNode ++++++++++++++++++++++++++\par
+import java.awt.Point;\par
+\par
+/**\par
+ * Node class for pyramid data structure. \par
+ *     Pyramid level d as exactly d+1 nodes.\par
+ *     Nodes have location and size information even though they\par
+ *        are not themselves displayed. The idea is that the "data"\par
+ *        object (of type T, which must implement the Geometry interface)\par
+ *        are likely to be displayed. The size information comes from\par
+ *        those objects -- although they should be the same size or \par
+ *        things won't work very well. The location information is \par
+ *        determined by the pyramid structure.\par
+ * ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+ * The starting code for this class is barely enough to allow the\par
+ * starting package to "appear" to play the game. This class is \par
+ * primarily used in the starter code to "save" the location in the\par
+ * pyramid of a Card that has been played. This allows the "Undo" to\par
+ * restore the card to its place in the pyramid.\par
+ * \par
+ * You will surely need additional code here and may want to rewrite\par
+ * some of what is here.\par
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\par
+ * \par
+ * @author David Bitman rdb\par
+ * March 2014 -- derived from earlier TreeNode class. \par
+ * \par
+ * @param <T> extends Geometry\par
+ */\par
+class PyramidNode<T extends Geometry >  implements Geometry\par
+\{\par
+    //--------------------- instance variables --------------------\par
+    private PyramidNode<T>   _left;\par
+    private PyramidNode<T>   _right;\par
+\par
+    private int       _xLoc;\par
+    private int       _yLoc;\par
+    private int       _width;\par
+    private int       _height; \par
+    \par
+    private T         _data;        // \par
+    private boolean   _hasData;     // true if data object is in pyramid\par
+    \par
+    //----------------- constructors -----------------------------\par
+    /**\par
+     * Construct a PyramidNode with position and size information.\par
+     * @param x int\par
+     * @param y int\par
+     * @param w int\par
+     * @param h int\par
+     */\par
+    public PyramidNode( int x, int y, int w, int h )\par
+    \{\par
+        _left = null;\par
+        _right = null;\par
+        _data = null;\par
+        _hasData = false;\par
+        _xLoc = x;\par
+        _yLoc = y;\par
+        _width = w;\par
+        _height = w;\par
+    \}\par
+    //------------------ setData( T content ) -------------------------\par
+    /**\par
+     * Define the data content to be saved in this node.\par
+     * \par
+     * @param content T\par
+     */\par
+    public void setData( T content )\par
+    \{\par
+        _data = content;\par
+        _hasData = true;\par
+    \}\par
+    //------------------ getData() -------------------------\par
+    /**\par
+     * Get the data content saved in this node.\par
+     * @return T\par
+     */\par
+    public T getData()\par
+    \{\par
+        return _data;\par
+    \}\par
+    //------------------ toString() ------------------------------\par
+    /**\par
+     * Return a string representation for the node.\par
+     * @return String\par
+     */\par
+    public String toString()\par
+    \{\par
+        return "\{." + _left + "." + _right + ":" + _data + "\}";\par
+    \}\par
+    //++++++++++++++++++++++ Geometry interface +++++++++++++++++++++\par
+    //------------------ getX() ---------------\par
+    /**\par
+     * Return the x value of the object's location.\par
+     * @return int\par
+     */\par
+    public int getX()\par
+    \{\par
+        return _xLoc;\par
+    \}\par
+    //------------------ getY() ---------------\par
+    /**\par
+     * Return the y value of the object's location.\par
+     * @return int\par
+     */\par
+    public int getY()\par
+    \{\par
+        return _yLoc;\par
+    \}\par
+    //------------------ getLocation() ---------------\par
+    /**\par
+     * Return the object's location as a Point.\par
+     * @return Point\par
+     */    \par
+    public Point getLocation()\par
+    \{\par
+        return new Point( _xLoc, _yLoc );\par
+    \}\par
+    //------------------ getHeight() ---------------\par
+    /**\par
+     * Return the height of the object's bounding box.\par
+     * @return int\par
+     */    \par
+    public int getHeight()\par
+    \{\par
+        return _height;\par
+    \}\par
+    //------------------ getWidth() ---------------\par
+    /**\par
+     * Return the height of the object's bounding box.\par
+     * @return int\par
+     */    \par
+    public int getWidth()\par
+    \{\par
+        return _width;\par
+    \}\par
+    /**\par
+     * Return the height of the object's bounding box.\par
+     * @return int\par
+     */\par
+     public PyramidNode<T> chooseWest( )\par
+    \{\par
+     return _left;\par
+    \}\par
+     /**\par
+     * Return the height of the object's bounding box.\par
+     * @return int\par
+     */\par
+       public PyramidNode<T> chooseEast( )\par
+    \{\par
+     return _right;\par
+    \}\par
+       /**\par
+     * Return the height of the object's bounding box.\par
+     * @return int\par
+     */\par
+       public void takeWest( PyramidNode<T> take )\par
+    \{\par
+     _left = take;\par
+    \}\par
+       /**\par
+     * Return the height of the object's bounding box.\par
+     * @return int\par
+     */\par
+       public void takeEast( PyramidNode<T> take )\par
+    \{\par
+     _right = take;\par
+    \}\par
+\}\par
+\par
+}
+ 

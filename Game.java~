@@ -167,6 +167,7 @@ public class Game extends JPanel
      */
     public boolean play( Card picked )
     {
+       
         boolean playedFromPyramid = false;
 
         if ( picked == _drawPile.top() )
@@ -177,7 +178,18 @@ public class Game extends JPanel
             ///////////////////////////////////////////////////////////
             // 7I: Need to check here to see if game has ended
             ///////////////////////////////////////////////////////////
+            //If Player loses
+            if( _drawPile.top() == null )
+            {
+                System.out.println( "You Lose");
+            }
 
+                    
+                
+              
+         
+                
+                
 
 
 
@@ -185,6 +197,8 @@ public class Game extends JPanel
 
         }
         return playedFromPyramid;
+
+
     }
     //------------------------ playPyramidCard ------------------------
     /**
